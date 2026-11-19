@@ -18,6 +18,9 @@ Open the local URL printed by Vite. Run `npm run build` to create the production
 1. Push this repository to GitHub with the default branch named `main`.
 2. In the repository, open **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions**.
 3. Push to `main` or run **Deploy to GitHub Pages** manually from the Actions tab. The workflow builds the app and publishes `dist`.
+4. Open the URL shown in the deployment job. For the `memory-tiles-challenge` repository, the usual project URL is `https://vsamhita2028.github.io/memory-tiles-challenge/`.
+
+If the browser reports a MIME type error for `/src/main.jsx`, Pages is serving the repository source instead of the built site. Select **GitHub Actions** as the Pages source, rerun the workflow, and open the deployment URL. Do not publish the repository root directly.
 
 The build uses relative asset paths, so it works at both a domain root and a repository path. If your default branch has a different name, update the branch in `.github/workflows/deploy.yml`. No backend or environment variables are required.
 
