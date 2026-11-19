@@ -36,3 +36,5 @@
 .stat small{font-size:11px}
 .stat-divider{height:30px}
 @media(max-width:560px){.panel-top{padding:14px 16px}.stats{margin-top:12px;gap:10px}.panel-top h2{font-size:18px}.stat strong{font-size:17px}}
+
+.preview-message{text-align:center;margin:0 0 12px;color:#345d85;font-size:13px;font-weight:600}.preview-message strong{color:#2076c0}

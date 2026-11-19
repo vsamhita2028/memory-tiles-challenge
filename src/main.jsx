@@ -11,6 +11,7 @@ const PAIRS = [
   { id: 'analytics', product: 'Zoho Analytics', use: 'Analyze business data', symbol: '▥' },
 ];
 const DURATION = 120;
+const PREVIEW_SECONDS = 3;
 
 function makeDeck() {
   const deck = PAIRS.flatMap((pair) => [
@@ -74,6 +75,7 @@ function App() {
   const [matched, setMatched] = useState([]);
   const [attempts, setAttempts] = useState(0);
   const [remaining, setRemaining] = useState(DURATION);
+  const [previewRemaining, setPreviewRemaining] = useState(PREVIEW_SECONDS);
   const [playerName, setPlayerName] = useState('');
   const [scores, setScores] = useState([]);
   const [storageError, setStorageError] = useState(false);
@@ -81,6 +83,21 @@ function App() {
   const [checkingName, setCheckingName] = useState(false);
   const deadline = useRef(null);
   const mismatchTimer = useRef(null);
+
+  useEffect(() => {
+    if (phase !== 'preview') return;
+    const previewEnd = Date.now() + PREVIEW_SECONDS * 1000;
+    const update = () => {
+      const left = Math.max(0, Math.ceil((previewEnd - Date.now()) / 1000));
+      setPreviewRemaining(left);
+      if (left === 0) {
+        deadline.current = Date.now() + DURATION * 1000;
+        setPhase('playing');
+      }
+    };
+    const timer = setInterval(update, 100);
+    return () => clearInterval(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'playing') return;
@@ -117,8 +134,8 @@ function App() {
     setCheckingName(false);
     clearTimeout(mismatchTimer.current);
     setDeck(makeDeck()); setSelected([]); setMatched([]); setAttempts(0); setRemaining(DURATION);
-    deadline.current = Date.now() + DURATION * 1000;
-    setPhase('playing');
+    setPreviewRemaining(PREVIEW_SECONDS);
+    setPhase('preview');
   }
   function returnHome() {
     clearTimeout(mismatchTimer.current);
@@ -152,10 +169,10 @@ function App() {
       {phase === 'ready' && <div className="intro-row"><div><div className="eyebrow"><span/> THE CATALYST CHALLENGE</div><h1>A little memory.<br/><em>A lot of possibilities.</em></h1><p className="intro-text">Meet the Zoho products that help great ideas go further. Find their match and see how many you can remember.</p></div><div className="intro-art" aria-hidden="true"><span className="art-star">✳</span><span className="art-orbit orbit-one"/><span className="art-orbit orbit-two"/><span className="art-dot dot-one"/><span className="art-dot dot-two"/><span className="art-plus">✦</span></div></div>}
       <section className={`game-panel ${phase !== 'ready' ? 'game-panel-active' : ''}`} aria-labelledby="game-heading">
         <div className="panel-top"><div><div className="section-kicker"><span className="tiny-grid">▦</span> THE GAME</div><h2 id="game-heading">Memory Tiles <span className="heading-spark">✳</span></h2><p>Match each Zoho product to what it does.</p></div><div className="stats" aria-label="Game statistics"><div className={`stat ${remaining <= 20 && phase === 'playing' ? 'urgent' : ''}`}><span className="stat-label">TIME LEFT</span><strong>{formatTime(remaining)}</strong></div><span className="stat-divider"/><div className="stat"><span className="stat-label">ATTEMPTS</span><strong>{String(attempts).padStart(2, '0')}</strong></div><span className="stat-divider"/><div className="stat"><span className="stat-label">MATCHED</span><strong>{matched.length}<small> / 6</small></strong></div></div></div>
-        <div className="board-area"><div className="board-heading"><div className="board-hint"><span className="hint-icon">✧</span> Blue = product · Lavender = use case</div><div className="board-actions"><span className="board-status"><span/> {phase === 'playing' ? 'GAME IN PROGRESS' : finished ? 'GAME COMPLETE' : 'READY WHEN YOU ARE'}</span>{phase === 'playing' && <button type="button" className="exit-button" onClick={returnHome}>Exit game</button>}</div></div>
-          {phase === 'ready' ? <div className="product-guide"><div className="guide-intro"><div><span className="card-eyebrow">BEFORE YOU BEGIN</span><h3>Meet your matches.</h3><p>Take a moment to get to know the products. Then match each one to what it does before the two minutes are up.</p></div><div className="start-controls"><label htmlFor="player-name">YOUR NAME</label><input id="player-name" required maxLength={30} value={playerName} onChange={(event) => { setPlayerName(event.target.value); setNameError(''); }} placeholder="Enter your name" autoComplete="nickname" aria-invalid={!!nameError} aria-describedby={nameError ? "name-error" : undefined}/><button className="primary-button" onClick={startGame} disabled={!playerName.trim() || checkingName}>{checkingName ? 'Checking name…' : 'Start the challenge'} <span>↗</span></button>{nameError && <span id="name-error" className="name-error" role="alert">{nameError}</span>}</div></div><div className="guide-list">{PAIRS.map((pair) => <div className="guide-pair" key={pair.id}><span className="guide-icon" aria-hidden="true">{pair.symbol}</span><div><strong>{pair.product}</strong><span>{pair.use}</span></div></div>)}</div><div className="guide-footer"><span>◷ &nbsp; 2 MINUTES &nbsp; · &nbsp; 6 MATCHES</span><span>Blue tiles are products; lavender tiles are use cases.</span></div></div> : <div className="board-wrap"><div className="tile-grid">{deck.map((tile, index) => <Tile key={tile.key} tile={tile} index={index} revealed={selected.includes(tile.key)} matched={matched.includes(tile.id)} disabled={phase !== 'playing' || selected.length === 2} onClick={() => choose(tile)} />)}</div>
+        <div className="board-area"><div className="board-heading"><div className="board-hint"><span className="hint-icon">✧</span> Blue = product · Lavender = use case</div><div className="board-actions"><span className="board-status"><span/> {phase === 'preview' ? 'PREVIEW' : phase === 'playing' ? 'GAME IN PROGRESS' : finished ? 'GAME COMPLETE' : 'READY WHEN YOU ARE'}</span>{(phase === 'playing' || phase === 'preview') && <button type="button" className="exit-button" onClick={returnHome}>Exit game</button>}</div></div>
+          {phase === 'ready' ? <div className="product-guide"><div className="guide-intro"><div><span className="card-eyebrow">BEFORE YOU BEGIN</span><h3>Meet your matches.</h3><p>Take a moment to get to know the products. Then match each one to what it does before the two minutes are up.</p></div><div className="start-controls"><label htmlFor="player-name">YOUR NAME</label><input id="player-name" required maxLength={30} value={playerName} onChange={(event) => { setPlayerName(event.target.value); setNameError(''); }} placeholder="Enter your name" autoComplete="nickname" aria-invalid={!!nameError} aria-describedby={nameError ? "name-error" : undefined}/><button className="primary-button" onClick={startGame} disabled={!playerName.trim() || checkingName}>{checkingName ? 'Checking name…' : 'Start the challenge'} <span>↗</span></button>{nameError && <span id="name-error" className="name-error" role="alert">{nameError}</span>}</div></div><div className="guide-list">{PAIRS.map((pair) => <div className="guide-pair" key={pair.id}><span className="guide-icon" aria-hidden="true">{pair.symbol}</span><div><strong>{pair.product}</strong><span>{pair.use}</span></div></div>)}</div><div className="guide-footer"><span>◷ &nbsp; 2 MINUTES &nbsp; · &nbsp; 6 MATCHES</span><span>Blue tiles are products; lavender tiles are use cases.</span></div></div> : <div className="board-wrap">{phase === 'preview' && <p className="preview-message" role="status" aria-live="polite">Memorize the tiles! Game starts in <strong>{previewRemaining}</strong> seconds.</p>}<div className="tile-grid">{deck.map((tile, index) => <Tile key={tile.key} tile={tile} index={index} revealed={phase === 'preview' || selected.includes(tile.key)} matched={matched.includes(tile.id)} disabled={phase !== 'playing' || selected.length === 2} onClick={() => choose(tile)} />)}</div>
           {finished && <div className="start-overlay result-overlay" role="status" aria-live="polite"><div className="start-card result-card"><div className="result-icon">{phase === 'won' ? '✦' : '◷'}</div><span className="card-eyebrow">{phase === 'won' ? 'ALL MATCHED UP' : 'TIME IS UP'}</span><h3>{phase === 'won' ? 'You nailed it!' : 'Nice playing!'}</h3><p>{phase === 'won' ? 'You found every match. That’s a brilliant bit of memory.' : `You found ${matched.length} of 6 pairs. Ready to give it another go?`}</p><div className="result-stats"><div><strong>{formatTime(DURATION - remaining)}</strong><span>TIME ELAPSED</span></div><div><strong>{attempts}</strong><span>ATTEMPTS</span></div></div><button className="primary-button" onClick={returnHome}>Back to home <span>↗</span></button></div></div>}</div>}
-          <div className="board-footer"><span><span className="hint-icon">✧</span> {phase === 'playing' ? 'Good luck!' : 'A little curiosity goes a long way.'}</span><span>MADE FOR CURIOUS MINDS <span className="footer-heart">♥</span></span></div>
+          <div className="board-footer"><span><span className="hint-icon">✧</span> {phase === 'preview' ? 'The timer starts after the preview.' : phase === 'playing' ? 'Good luck!' : 'A little curiosity goes a long way.'}</span><span>MADE FOR CURIOUS MINDS <span className="footer-heart">♥</span></span></div>
         </div>
       </section>
       <Leaderboard scores={scores} storageError={storageError} />

@@ -1,6 +1,6 @@
 # Memory Tiles
 
-A browser-only matching game for the Zoho Catalyst booth at React Hyderabad Utsavam 2026. Match each Zoho product with its use case before the two-minute timer ends.
+A browser-only matching game for the Zoho Catalyst booth at React Hyderabad Utsavam 2026. Study all tiles during a three-second preview, then match each Zoho product with its use case before the two-minute timer ends.
 
 ## Run locally
 
